@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import matplotlib.cm
-from datetime import datetime
+from Code.Time import parse_time_utc
 from Code.Database import save_schedule, load_schedule
 
 def create_group_colour_map(schedule, cmap_name='tab20'):
@@ -19,7 +19,7 @@ def create_group_colour_map(schedule, cmap_name='tab20'):
 
 def is_valid_time(t):
     try:
-        datetime.strptime(t, "%H:%M")
+        parse_time_utc(t, "%H:%M")
         return True
     except:
         return False
@@ -32,7 +32,7 @@ def booking_overview_page():
         return
 
     # Sort schedule by departure_time to keep order consistent after edits
-    schedule.sort(key=lambda x: datetime.strptime(x['departure_time'], "%H:%M"))
+    schedule.sort(key=lambda x: parse_time_utc(x['departure_time'], "%H:%M"))
 
     group_colour_map = create_group_colour_map(schedule)
 

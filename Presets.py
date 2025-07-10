@@ -84,10 +84,10 @@ def preset_schedule_page():
     new_time = st.text_input("Enter departure time (HH:MM)", key="new_train_time")
 
     if st.button("Add Train"):
-        from datetime import datetime
+        from Code.Time import parse_time_utc
 
         try:
-            datetime.strptime(new_time, "%H:%M")
+            parse_time_utc(new_time, "%H:%M")
         except ValueError:
             st.error("Invalid time format! Please enter time as HH:MM.")
         else:

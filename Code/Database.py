@@ -121,7 +121,6 @@ def create_presets_table():
     conn.commit()
     conn.close()
 
-import json
 from datetime import datetime
 
 def list_presets():

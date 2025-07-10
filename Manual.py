@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime
+from Code.Time import now_utc, parse_time_utc
 from Code.Database import save_schedule, load_schedule
 
 def display_assignment_success(schedule, group_id):
@@ -32,9 +32,9 @@ def display_feedback():
         st.session_state.feedback = None
 
 def is_future_train(train):
-    now = datetime.now()
+    now = now_utc()
     try:
-        dep_time = datetime.strptime(train['departure_time'], "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+        dep_time = parse_time_utc(train['departure_time'], "%H:%M").replace(year=now.year, month=now.month, day=now.day)
         return dep_time >= now
     except:
         return False

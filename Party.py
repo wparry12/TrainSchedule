@@ -1,6 +1,6 @@
-from datetime import datetime
 import streamlit as st
 import os
+from Code.Time import parse_time_utc
 from Code.Database import save_schedule, load_schedule
 
 # Party Train page
@@ -10,7 +10,7 @@ def party_train_page():
     schedule = load_schedule()
 
     # Sort trains by departure_time (e.g. "13:45") as datetime objects
-    schedule.sort(key=lambda x: datetime.strptime(x['departure_time'], "%H:%M"))
+    schedule.sort(key=lambda x: parse_time_utc(x['departure_time'], "%H:%M"))
 
     for train in schedule:
         current_status = train.get("party_train", False)

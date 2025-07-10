@@ -1,10 +1,10 @@
 import streamlit as st
-from datetime import datetime
 from Code import WC as wc
 from Code.SmallGroup import SmallGroupHandler
 from Code.MediumGroup import MediumGroupHandler
 from Code.LargeGroups import LargeGroupHandler
 from Code.Database import save_schedule, load_schedule, create_tables, create_presets_table
+from Code.Time import now_utc, parse_time_utc
 
 from Code.Utils import only_c4_c5_available, only_c1_c8_available
 
@@ -14,8 +14,8 @@ create_tables()
 create_presets_table()
 
 def minutes_until_departure(dep_time_str):
-    now = datetime.now()
-    dep_time = datetime.strptime(dep_time_str, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+    now = now_utc()
+    dep_time = parse_time_utc(dep_time_str, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
     delta = dep_time - now
     return int((delta.total_seconds() + 59) // 60)
 
@@ -29,7 +29,7 @@ def find_soon_departing_train(schedule):
     return None, None
 
 def assign_group(schedule, adults, toddlers, wheelchair_count, group_size, group_id, confirmed=False, restricted_carriages=None):
-    schedule = sorted(schedule, key=lambda x: datetime.strptime(x['departure_time'], "%H:%M"))
+    schedule = sorted(schedule, key=lambda x: parse_time_utc(x['departure_time'], "%H:%M"))
 
     for train_index, train in enumerate(schedule):
         if train["cancelled"] or train["party_train"] or train["school_name"] != "":

@@ -1,6 +1,6 @@
 import streamlit as st
 import os
-from datetime import datetime
+from Code.Time import parse_time_utc
 from Code.Database import save_schedule, load_schedule
 
 # Cancel train page
@@ -10,7 +10,7 @@ def train_cancel_page():
     schedule = load_schedule()
 
     # Sort by departure time
-    schedule.sort(key=lambda x: datetime.strptime(x['departure_time'], "%H:%M"))
+    schedule.sort(key=lambda x: parse_time_utc(x['departure_time'], "%H:%M"))
 
     for train in schedule:
         current_status = train.get("cancelled", False)
