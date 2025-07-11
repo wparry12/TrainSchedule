@@ -26,10 +26,14 @@ create_tables()
 create_presets_table()
 
 def minutes_until_departure(dep_time_str):
-    now = now_local
-    dep_time = parse_time_local(dep_time_str, "%H:%M").replace(year=now.year, month=now.month, day=now.day)
-    delta = dep_time - now
-    return int((delta.total_seconds() + 59) // 60)
+    now = datetime.now(LOCAL)
+    dep_time = parse_time_local(dep_time_str)
+    diff = dep_time - now
+    # If negative, means departure is tomorrow
+    if diff.total_seconds() < 0:
+        dep_time = dep_time.replace(day=dep_time.day + 1)
+        diff = dep_time - now
+    return int(diff.total_seconds() // 60)
 
 def find_soon_departing_train(schedule):
     for train in schedule:
