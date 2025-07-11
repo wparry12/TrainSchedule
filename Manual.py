@@ -46,7 +46,7 @@ def display_feedback():
 def is_future_train(train):
     now = now_local()
     try:
-        dep_time = parse_time_local(train['departure_time'], "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+        dep_time = parse_time_local(train['departure_time']).replace(year=now.year, month=now.month, day=now.day)
         return dep_time >= now
     except:
         return False

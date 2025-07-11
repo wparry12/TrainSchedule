@@ -20,7 +20,7 @@ def train_cancel_page():
     schedule = load_schedule()
 
     # Sort by departure time
-    schedule.sort(key=lambda x: parse_time_local(x['departure_time'], "%H:%M"))
+    schedule.sort(key=lambda x: parse_time_local(x['departure_time']))
 
     for train in schedule:
         current_status = train.get("cancelled", False)

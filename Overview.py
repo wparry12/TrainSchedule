@@ -29,7 +29,7 @@ def create_group_colour_map(schedule, cmap_name='tab20'):
 
 def is_valid_time(t):
     try:
-        parse_time_local(t, "%H:%M")
+        parse_time_local(t)
         return True
     except:
         return False
@@ -42,7 +42,7 @@ def booking_overview_page():
         return
 
     # Sort schedule by departure_time to keep order consistent after edits
-    schedule.sort(key=lambda x: parse_time_local(x['departure_time'], "%H:%M"))
+    schedule.sort(key=lambda x: parse_time_local(x['departure_time']))
 
     group_colour_map = create_group_colour_map(schedule)
 

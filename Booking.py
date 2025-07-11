@@ -45,7 +45,7 @@ def find_soon_departing_train(schedule):
     return None, None
 
 def assign_group(schedule, adults, toddlers, wheelchair_count, group_size, group_id, confirmed=False, restricted_carriages=None):
-    schedule = sorted(schedule, key=lambda x: parse_time_local(x['departure_time'], "%H:%M"))
+    schedule = sorted(schedule, key=lambda x: parse_time_local(x['departure_time']))
 
     for train_index, train in enumerate(schedule):
         if train["cancelled"] or train["party_train"] or train["school_name"] != "":

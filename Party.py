@@ -8,7 +8,7 @@ LOCAL = ZoneInfo("Europe/London")
 
 def parse_time_local(time_str):
     now = datetime.now(LOCAL)
-    dt = datetime.strptime(time_str, "%H:%M").replace(
+    dt = datetime.strptime(time_str).replace(
         year=now.year, month=now.month, day=now.day, tzinfo=LOCAL
     )
     return dt
@@ -20,7 +20,7 @@ def party_train_page():
     schedule = load_schedule()
 
     # Sort trains by departure_time (e.g. "13:45") as datetime objects
-    schedule.sort(key=lambda x: parse_time_local(x['departure_time'], "%H:%M"))
+    schedule.sort(key=lambda x: parse_time_local(x['departure_time']))
 
     for train in schedule:
         current_status = train.get("party_train", False)

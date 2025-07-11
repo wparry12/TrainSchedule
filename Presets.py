@@ -97,7 +97,7 @@ def preset_schedule_page():
             return dt
 
         try:
-            parse_time_local(new_time, "%H:%M")
+            parse_time_local(new_time)
         except ValueError:
             st.error("Invalid time format! Please enter time as HH:MM.")
         else:
