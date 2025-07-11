@@ -400,7 +400,7 @@ def booking_page():
         carriage_2_list = [c for c in train["carriages"] if c["number"] == "2" and not c.get("occupied", False)]
         return len(carriage_2_list) >= wheelchair_count
 
-    if soon_train and group_can_fit_on_train(soon_train, group_size, adults, toddlers, wheelchair_count):
+    if soon_train and group_can_fit_on_train(soon_train, group_size, adults, toddlers, wheelchair_count) and adults != 0 and children != 0:
         # Skip warning if wheelchair users exist but no room for them on carriage 2(s)
         if wheelchair_count == 0 or (wheelchair_count > 0 and can_accommodate_wheelchair(soon_train, wheelchair_count)):
             st.warning(f"⚠️ Train at {soon_train['departure_time']} leaves in {soon_minutes} minutes.")

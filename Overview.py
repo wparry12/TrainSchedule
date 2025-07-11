@@ -7,6 +7,13 @@ from zoneinfo import ZoneInfo
 
 LOCAL = ZoneInfo("Europe/London")
 
+def has_departed(dep_time_str):
+    now = datetime.now(LOCAL)
+    dep_time = datetime.strptime(dep_time_str, "%H:%M").replace(
+        year=now.year, month=now.month, day=now.day, tzinfo=LOCAL
+    )
+    return dep_time < now
+
 def parse_time_local(time_str):
     now = datetime.now(LOCAL)
     dt = datetime.strptime(time_str, "%H:%M").replace(
@@ -50,7 +57,8 @@ def booking_overview_page():
     all_times = [train['departure_time'] for train in schedule]
     selected_times = st.multiselect("Filter by Departure Time:", all_times, default=None)
 
-    show_cancelled = st.checkbox("Show Cancelled Trains", value=True)
+    show_cancelled = st.checkbox("Show Cancelled Trains", value=False)
+    show_previous = st.checkbox("Show trains that have been", value=False)
     show_party = st.checkbox("Show Party Trains", value=True)
     show_Schools = st.checkbox("Show School Trains", value=True)
     show_wheelchair = st.checkbox("Show Wheelchair Users", value=True)
@@ -63,6 +71,7 @@ def booking_overview_page():
         and (show_cancelled or not t.get('cancelled', False))
         and (show_party or not t.get('party_train', False))
         and (show_Schools or not t.get('school_name', False))
+        and (show_previous or not has_departed(t['departure_time']))
     ]
 
     if not filtered:
@@ -120,8 +129,17 @@ def booking_overview_page():
                 toddlers = carriage.get('toddlers', 0)
                 wheelchair = carriage.get('wheelchair', False)
 
-                colour = group_colour_map.get(gid, '#eee') if size else '#eee'
-                
+                # Determine carriage colour
+                if is_cancelled:
+                    colour = '#ff4d4d'  # red for cancelled
+                elif is_party:
+                    colour = '#add8e6' if i % 2 == 0 else '#ffb6c1'  # blue/pink alternating
+                elif is_school:
+                    colour = '#ffff99'  # yellow for school
+                else:
+                    colour = group_colour_map.get(gid, '#eee') if size else '#eee'
+
+                # Create label with optional icons
                 label = f"👥 {size}" if size else "Empty"
                 if show_toddlers and toddlers:
                     label += f"\n👶 {toddlers}"
@@ -130,10 +148,11 @@ def booking_overview_page():
 
                 with carriage_cols[i]:
                     st.markdown(f"""
-                        <div style='background-color:{colour}; border-radius:10px; padding:10px; text-align:center; min-height:80px;'>
+                       <div style='background-color:{colour}; border-radius:10px; padding:10px; text-align:center; min-height:80px;'>
                             <b>C{i+1}</b><br>{label.replace(chr(10), '<br>')}
                         </div>
                     """, unsafe_allow_html=True)
+
 
             st.markdown("---")
     st.subheader("➕ Add New Train")
