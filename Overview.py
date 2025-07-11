@@ -58,7 +58,7 @@ def booking_overview_page():
     selected_times = st.multiselect("Filter by Departure Time:", all_times, default=None)
 
     show_cancelled = st.checkbox("Show Cancelled Trains", value=False)
-    show_previous = st.checkbox("Show trains that have been", value=False)
+    show_previous = st.checkbox("Show Trains That Have Been", value=False)
     show_party = st.checkbox("Show Party Trains", value=True)
     show_Schools = st.checkbox("Show School Trains", value=True)
     show_wheelchair = st.checkbox("Show Wheelchair Users", value=True)
