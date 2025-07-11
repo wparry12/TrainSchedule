@@ -1,6 +1,18 @@
 import streamlit as st
-from Code.Time import now_utc, parse_time_utc
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from Code.Database import save_schedule, load_schedule
+
+LOCAL = ZoneInfo("Europe/London")
+
+now_local = datetime.now(LOCAL)
+
+def parse_time_local(time_str):
+    now = datetime.now(LOCAL)
+    dt = datetime.strptime(time_str, "%H:%M").replace(
+        year=now.year, month=now.month, day=now.day, tzinfo=LOCAL
+    )
+    return dt
 
 def display_assignment_success(schedule, group_id):
     for train in schedule:
@@ -32,9 +44,9 @@ def display_feedback():
         st.session_state.feedback = None
 
 def is_future_train(train):
-    now = now_utc()
+    now = now_local()
     try:
-        dep_time = parse_time_utc(train['departure_time'], "%H:%M").replace(year=now.year, month=now.month, day=now.day)
+        dep_time = parse_time_local(train['departure_time'], "%H:%M").replace(year=now.year, month=now.month, day=now.day)
         return dep_time >= now
     except:
         return False

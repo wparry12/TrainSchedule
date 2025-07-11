@@ -1,7 +1,17 @@
 import streamlit as st
 import os
-from Code.Time import parse_time_utc
+from datetime import datetime
 from Code.Database import save_schedule, load_schedule
+from zoneinfo import ZoneInfo
+
+LOCAL = ZoneInfo("Europe/London")
+
+def parse_time_local(time_str):
+    now = datetime.now(LOCAL)
+    dt = datetime.strptime(time_str, "%H:%M").replace(
+        year=now.year, month=now.month, day=now.day, tzinfo=LOCAL
+    )
+    return dt
 
 # Cancel train page
 def train_cancel_page():
@@ -10,7 +20,7 @@ def train_cancel_page():
     schedule = load_schedule()
 
     # Sort by departure time
-    schedule.sort(key=lambda x: parse_time_utc(x['departure_time'], "%H:%M"))
+    schedule.sort(key=lambda x: parse_time_local(x['departure_time'], "%H:%M"))
 
     for train in schedule:
         current_status = train.get("cancelled", False)
