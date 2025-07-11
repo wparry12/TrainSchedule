@@ -8,7 +8,7 @@ LOCAL = ZoneInfo("Europe/London")
 
 def parse_time_local(time_str):
     now = datetime.now(LOCAL)
-    dt = datetime.strptime(time_str).replace(
+    dt = datetime.strptime(time_str, "%H:%M").replace(
         year=now.year, month=now.month, day=now.day, tzinfo=LOCAL
     )
     return dt
