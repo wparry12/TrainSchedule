@@ -5,8 +5,6 @@ from Code.Database import save_schedule, load_schedule
 
 LOCAL = ZoneInfo("Europe/London")
 
-now_local = datetime.now(LOCAL)
-
 def parse_time_local(time_str):
     now = datetime.now(LOCAL)
     dt = datetime.strptime(time_str, "%H:%M").replace(
@@ -44,7 +42,7 @@ def display_feedback():
         st.session_state.feedback = None
 
 def is_future_train(train):
-    now = now_local()
+    now = datetime.now(LOCAL)
     try:
         dep_time = parse_time_local(train['departure_time']).replace(year=now.year, month=now.month, day=now.day)
         return dep_time >= now
