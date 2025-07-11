@@ -26,7 +26,7 @@ create_tables()
 create_presets_table()
 
 def minutes_until_departure(dep_time_str):
-    now = datetime.now()
+    now = datetime.now(LOCAL)
     dep_time = parse_time_local(dep_time_str)
     delta = dep_time - now
     return int((delta.total_seconds() + 59) // 60)
