@@ -135,7 +135,7 @@ def booking_overview_page():
                 elif is_party:
                     colour = '#add8e6' if i % 2 == 0 else '#ffb6c1'  # blue/pink alternating
                 elif is_school:
-                    colour = '#ffff99'  # yellow for school
+                    colour = "#ddc446"  # yellow for school
                 else:
                     colour = group_colour_map.get(gid, '#eee') if size else '#eee'
 
