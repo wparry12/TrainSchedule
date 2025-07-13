@@ -8,6 +8,7 @@ from Manual import manual_group_assignment_page
 from Party import party_train_page
 from Presets import preset_schedule_page
 from School import school_train_page
+from Information import information_page
 
 def main():
     # Sidebar navigation
@@ -15,10 +16,10 @@ def main():
         selected_page = option_menu(
             menu_title="Main Menu",
             options=[
-                "Booking", "Overview", "Manual Booking", "Remove Groups",
+                "Booking", "Overview", "Information","Manual Booking", "Remove Groups",
                 "Remove Train Times", "Party Train", "School Train", "Schedule Presets"
             ],
-            icons=["book", "list-task", "person", "trash", "x-circle", "gift", "building", "gear"],
+            icons=["book", "list-task", "info-circle", "person", "trash", "x-circle", "gift", "building", "gear"],
             menu_icon="cast",
             default_index=0,
             orientation="vertical",
@@ -36,6 +37,8 @@ def main():
         booking_page()
     elif selected_page == "Overview":
         booking_overview_page()
+    elif selected_page == "Information":
+        information_page()
     elif selected_page == "Remove Train Times":
         train_cancel_page()
     elif selected_page == "Remove Groups":
