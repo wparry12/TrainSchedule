@@ -108,6 +108,20 @@ def load_schedule():
     conn.close()
     return schedule
 
+def create_notes_table():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS daily_notes (
+        date TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT,
+        PRIMARY KEY (date, key)
+    )
+    """)
+    conn.commit()
+    conn.close()
+
 def create_presets_table():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -122,7 +136,32 @@ def create_presets_table():
     conn.commit()
     conn.close()
 
-from datetime import datetime
+from datetime import datetime, date
+
+def save_notes_to_db(note_date, notes_dict):
+    if note_date < date.today():
+        return  # Do not save past notes
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    for key, value in notes_dict.items():
+        cursor.execute("""
+        INSERT INTO daily_notes (date, key, value)
+        VALUES (?, ?, ?)
+        ON CONFLICT(date, key) DO UPDATE SET value = excluded.value
+        """, (note_date.isoformat(), key, value.strip()))
+    conn.commit()
+    conn.close()
+
+def load_notes_from_db(note_date, all_keys):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT key, value FROM daily_notes WHERE date = ?", (note_date.isoformat(),))
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Create a complete dict with all keys
+    return {key: dict(rows).get(key, "") for key in all_keys}
 
 def list_presets():
     conn = get_db_connection()
@@ -165,3 +204,38 @@ def delete_preset(name):
     conn.commit()
     conn.close()
     return affected > 0
+
+def delete_old_notes():
+    today = date.today().isoformat()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM daily_notes WHERE date < ?", (today,))
+    conn.commit()
+    conn.close()
+
+def init_custom_question_table():
+    with get_db_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS custom_questions (
+                id TEXT PRIMARY KEY,
+                text TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+
+def load_custom_questions():
+    init_custom_question_table()
+    with get_db_connection() as conn:
+        cursor = conn.execute("SELECT id, text FROM custom_questions")
+        return {row[0]: row[1] for row in cursor.fetchall()}
+
+def save_custom_question(q_id, q_text):
+    init_custom_question_table()
+    with get_db_connection() as conn:
+        conn.execute("INSERT OR REPLACE INTO custom_questions (id, text) VALUES (?, ?)", (q_id, q_text))
+        conn.commit()
+
+def delete_custom_question(q_id):
+    with get_db_connection() as conn:
+        conn.execute("DELETE FROM custom_questions WHERE id = ?", (q_id,))
+        conn.commit()

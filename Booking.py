@@ -3,7 +3,7 @@ from Code import WC as wc
 from Code.SmallGroup import SmallGroupHandler
 from Code.MediumGroup import MediumGroupHandler
 from Code.LargeGroups import LargeGroupHandler
-from Code.Database import save_schedule, load_schedule, create_tables, create_presets_table
+from Code.Database import save_schedule, load_schedule, create_tables, create_presets_table, create_notes_table
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -27,6 +27,7 @@ WARNING_THRESHOLD_MINUTES = 10
 
 create_tables()
 create_presets_table()
+create_notes_table()
 
 def minutes_until_departure(dep_time_str):
     now = datetime.now(LOCAL)
