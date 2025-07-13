@@ -11,6 +11,9 @@ LOCAL = ZoneInfo("Europe/London")
 
 now_local = datetime.now(LOCAL)
 
+def format_24_to_12(time_str):
+    return parse_time_local(time_str).strftime("%-I:%M %p")
+
 def parse_time_local(time_str):
     now = datetime.now(LOCAL)
     dt = datetime.strptime(time_str, "%H:%M").replace(
@@ -122,7 +125,7 @@ def display_assignment_success(schedule, group_id):
             sizes = [str(c["group_size"]) for c in carriages]
             toddler_count = sum(c["toddlers"] for c in carriages)
             wheelchair = any(c["wheelchair"] for c in carriages)
-            summary = f"Carriages {', '.join(c['number'] for c in carriages)}, Train {train['departure_time']}"
+            summary = f"Carriages {', '.join(c['number'] for c in carriages)}, Train {format_24_to_12(train['departure_time'])}"
             details = f"Group size: {' + '.join(sizes)}"
             extras = []
             if wheelchair:
@@ -162,7 +165,7 @@ def small_group_confirmation(train, group_size, carriage):
 
     if st.session_state[key] is None:
         st.warning(
-            f"Train at {train['departure_time']} has no free 2-seat carriages.\n"
+            f"Train at {format_24_to_12(train['departure_time'])} has no free 2-seat carriages.\n"
             f"Assign your group of {group_size} to larger carriage {carriage['number']} "
             f"(capacity {carriage['capacity']}) now, or wait for the next train?"
         )
@@ -298,7 +301,7 @@ def booking_page():
                 if not two_caps and four_caps:
                     st.warning(
                         f"🚩 Group of {group_size} can be seated in a 4-person carriage "
-                        f"on the {train['departure_time']} train (leaves in {minutes_until_departure(train['departure_time'])} mins). Continue?"
+                        f"on the {format_24_to_12(train['departure_time'])} train (leaves in {minutes_until_departure(train['departure_time'])} mins). Continue?"
 
                     )
                     col1, col2 = st.columns(2)
@@ -356,7 +359,7 @@ def booking_page():
         key = f"group_{group_id}_{''.join(special_carriages)}"
         if not st.session_state.confirm_c45.get(key, False):
             st.warning(
-                f"🚩 Only space for your group is on carriages {', '.join(special_carriages)} on train at {train['departure_time']} "
+                f"🚩 Only space for your group is on carriages {', '.join(special_carriages)} on train at {format_24_to_12(train['departure_time'])} "
                 f"which leaves in {minutes_until_departure(train['departure_time'])} minutes"
             )
             col1, col2 = st.columns(2)
@@ -403,7 +406,7 @@ def booking_page():
     if soon_train and group_can_fit_on_train(soon_train, group_size, adults, toddlers, wheelchair_count) and group_size != 0:
         # Skip warning if wheelchair users exist but no room for them on carriage 2(s)
         if wheelchair_count == 0 or (wheelchair_count > 0 and can_accommodate_wheelchair(soon_train, wheelchair_count)):
-            st.warning(f"⚠️ Train at {soon_train['departure_time']} leaves in {soon_minutes} minutes.")
+            st.warning(f"⚠️ Train at {format_24_to_12(soon_train['departure_time'])} leaves in {soon_minutes} minutes.")
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Assign to this train"):

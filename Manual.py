@@ -5,6 +5,9 @@ from Code.Database import save_schedule, load_schedule
 
 LOCAL = ZoneInfo("Europe/London")
 
+def format_24_to_12(time_str):
+    return parse_time_local(time_str).strftime("%-I:%M %p")
+
 def parse_time_local(time_str):
     now = datetime.now(LOCAL)
     dt = datetime.strptime(time_str, "%H:%M").replace(
@@ -20,7 +23,7 @@ def display_assignment_success(schedule, group_id):
             sizes = [str(c["group_size"]) for c in carriages]
             toddler_count = sum(c["toddlers"] for c in carriages)
             wheelchair = any(c["wheelchair"] for c in carriages)
-            summary = f"Carriages {', '.join(c['number'] for c in carriages)}, Train {train['departure_time']}"
+            summary = f"Carriages {', '.join(c['number'] for c in carriages)}, Train {format_24_to_12(train['departure_time'])}"
             details = f"Group size: {' + '.join(sizes)}"
             extras = []
             if wheelchair:
