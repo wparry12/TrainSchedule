@@ -9,7 +9,7 @@ def information_page():
         "in_charge": "In charge:",
         "first_aider": "First Aider:",
         "diggers_1_2": "Diggers 1pm-2pm:",
-        "train_lunch": "Who's covering the train drivers lunch and at what time:",
+        "train_lunch": "What time is the train driver having lunch and who is covering:",
         "clean_toilet": "Clean top toilet before 11:00am:",
         "quads_gokarts": "Quads & gokarts before 11:00am:",
         "leaf_blow": "Leaf blow Molly the Cow concrete, Panning for gold, train station etc.:",
