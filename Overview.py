@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import matplotlib.cm
-from datetime import datetime
+from datetime import datetime, time, timedelta
 from Code.Database import save_schedule, load_schedule
 from zoneinfo import ZoneInfo
 
@@ -14,22 +14,8 @@ def has_departed(dep_time_str):
     )
     return dep_time < now
 
-def parse_time_local_12h(time_str):
-    now = datetime.now(LOCAL)
-    dt = datetime.strptime(time_str.strip().upper(), "%-I:%M %p").replace(
-        year=now.year, month=now.month, day=now.day, tzinfo=LOCAL
-    )
-    return dt
-
 def format_24_to_12(time_str):
     return datetime.strptime(time_str, "%H:%M").strftime("%-I:%M %p")
-
-def is_valid_time(t):
-    try:
-        parse_time_local_12h(t)
-        return True
-    except:
-        return False
 
 def create_group_colour_map(schedule, cmap_name='tab20'):
     group_ids = sorted({
@@ -44,6 +30,16 @@ def create_group_colour_map(schedule, cmap_name='tab20'):
         for i, gid in enumerate(group_ids)
     }
 
+# Function to generate times in 5-minute increments
+def generate_time_options(start_time="00:00", end_time="23:55"):
+    start = datetime.strptime(start_time, "%H:%M")
+    end = datetime.strptime(end_time, "%H:%M")
+    times = []
+    while start <= end:
+        times.append(start.strftime("%H:%M"))
+        start += timedelta(minutes=5)
+    return times
+
 def booking_overview_page():
     st.title("📊 Train Booking Overview")
 
@@ -51,18 +47,21 @@ def booking_overview_page():
     if not schedule:
         return
 
-    # Sort by actual time
+    # Sort schedule by departure time
     schedule.sort(key=lambda x: datetime.strptime(x['departure_time'], "%H:%M"))
 
     group_colour_map = create_group_colour_map(schedule)
 
-    # Create 12h display mapping
+    # Generate time options in 5-minute intervals for the filter menu
+    time_options = generate_time_options()
+
+    # Time filter dropdown (12h format display)
     time_map = {t['departure_time']: format_24_to_12(t['departure_time']) for t in schedule}
     inv_time_map = {v: k for k, v in time_map.items()}
-
     selected_12hr = st.multiselect("Filter by Departure Time:", list(time_map.values()), default=None)
     selected_times = [inv_time_map[t] for t in selected_12hr]
 
+    # Filter checkboxes
     show_cancelled = st.checkbox("Show Cancelled Trains", value=False)
     show_previous = st.checkbox("Show Previous Trains", value=False)
     show_party = st.checkbox("Show Party Trains", value=True)
@@ -70,6 +69,7 @@ def booking_overview_page():
     show_wheelchair = st.checkbox("Show Wheelchair Users", value=True)
     show_toddlers = st.checkbox("Show Toddlers", value=True)
 
+    # Filtered schedule
     filtered = [
         t for t in schedule
         if (not selected_times or t['departure_time'] in selected_times)
@@ -110,20 +110,17 @@ def booking_overview_page():
 
             if st.session_state.get("edit_idx") == idx:
                 new_time_key = f"time_input_{idx}"
-                new_time = st.text_input("Edit Time (HH:MM AM/PM)", value=formatted_dep, key=new_time_key)
+                current_time = datetime.strptime(dep, "%H:%M").time()
+                new_time = st.time_input("Edit Time", value=current_time, key=new_time_key, step=timedelta(minutes=5))
 
-                if new_time:
-                    if is_valid_time(new_time):
-                        new_time_24 = parse_time_local_12h(new_time).strftime("%H:%M")
-                        if new_time_24 != dep:
-                            actual_idx = schedule.index(train)
-                            schedule[actual_idx]['departure_time'] = new_time_24
-                            save_schedule(schedule)
-                            st.success(f"Time updated to {new_time}")
-                            del st.session_state["edit_idx"]
-                            st.rerun()
-                    else:
-                        st.error("Invalid time format. Use HH:MM AM/PM (e.g. 03:45 PM)")
+                new_time_24 = new_time.strftime("%H:%M")
+                if new_time_24 != dep:
+                    actual_idx = schedule.index(train)
+                    schedule[actual_idx]['departure_time'] = new_time_24
+                    save_schedule(schedule)
+                    st.success(f"Time updated to {format_24_to_12(new_time_24)}")
+                    del st.session_state["edit_idx"]
+                    st.rerun()
 
             carriage_cols = st.columns(8)
             for i, carriage in enumerate(train['carriages']):
@@ -158,35 +155,32 @@ def booking_overview_page():
 
     st.subheader("➕ Add New Train")
     with st.form("add_train_form"):
-        new_train_time = st.text_input("Departure Time (HH:MM AM/PM)", key="new_train_time")
+        new_train_time = st.time_input("Departure Time", key="new_train_time", step=timedelta(minutes=5))
         submitted = st.form_submit_button("Add Train")
 
         if submitted:
-            if is_valid_time(new_train_time):
-                new_train_time_24 = parse_time_local_12h(new_train_time).strftime("%H:%M")
-                if any(t['departure_time'] == new_train_time_24 for t in schedule):
-                    st.warning("A train with this departure time already exists.")
-                else:
-                    default_carriages = {
-                        "1": 2, "2": 4, "3": 4, "4": 2, "5": 2, "6": 4, "7": 4, "8": 2
-                    }
-                    new_train = {
-                        "departure_time": new_train_time_24,
-                        "cancelled": False,
-                        "party_train": False,
-                        "school_name": "",
-                        "carriages": [
-                            {"number": c_num, "capacity": cap, "occupied": False, "group_size": 0,
-                             "toddlers": 0, "wheelchair": False, "group_id": 0}
-                            for c_num, cap in default_carriages.items()
-                        ]
-                    }
-                    schedule.append(new_train)
-                    save_schedule(schedule)
-                    st.success(f"Train at {new_train_time.upper()} added.")
-                    st.rerun()
+            new_train_time_24 = new_train_time.strftime("%H:%M")
+            if any(t['departure_time'] == new_train_time_24 for t in schedule):
+                st.warning("A train with this departure time already exists.")
             else:
-                st.error("Invalid time format. Please use HH:MM AM/PM (e.g. 09:45 AM)")
+                default_carriages = {
+                    "1": 2, "2": 4, "3": 4, "4": 2, "5": 2, "6": 4, "7": 4, "8": 2
+                }
+                new_train = {
+                    "departure_time": new_train_time_24,
+                    "cancelled": False,
+                    "party_train": False,
+                    "school_name": "",
+                    "carriages": [
+                        {"number": c_num, "capacity": cap, "occupied": False, "group_size": 0,
+                         "toddlers": 0, "wheelchair": False, "group_id": 0}
+                        for c_num, cap in default_carriages.items()
+                    ]
+                }
+                schedule.append(new_train)
+                save_schedule(schedule)
+                st.success(f"Train at {format_24_to_12(new_train_time_24)} added.")
+                st.rerun()
 
 if __name__ == "__main__":
     if "edit_idx" not in st.session_state:
