@@ -36,11 +36,13 @@ def main():
             if st.button("➖"):
                 if st.session_state.diggers_sold > 0:
                     st.session_state.diggers_sold -= 1
+                    st.rerun()
         with cols[1]:
             st.markdown(f"<h3 style='text-align:center;'>{st.session_state.diggers_sold}</h3>", unsafe_allow_html=True)
         with cols[2]:
             if st.button("➕"):
                 st.session_state.diggers_sold += 1
+                st.rerun()
 
     # Refresh logic
     if "last_page" not in st.session_state:

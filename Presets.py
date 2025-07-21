@@ -13,6 +13,16 @@ def parse_time_local(time_str):
     )
 
 
+def format_24_to_12(time_str):
+    """Convert 'HH:MM' (24h) string to 12-hour format with AM/PM."""
+    try:
+        # Unix-style (Linux, Mac)
+        return datetime.strptime(time_str, "%H:%M").strftime("%-I:%M %p")
+    except ValueError:
+        # Windows fallback (no %-I)
+        return datetime.strptime(time_str, "%H:%M").strftime("%#I:%M %p")
+
+
 def preset_schedule_page():
     st.title("📆 Train Schedule Presets")
 
@@ -77,9 +87,10 @@ def preset_schedule_page():
 
     if schedule:
         for i, train in enumerate(schedule):
+            dep_time_12h = format_24_to_12(train['departure_time'])
             cols = st.columns([6, 1])
             with cols[0]:
-                st.write(f"Train {i + 1} - Departure at {train['departure_time']}")
+                st.write(f"Train {i + 1} - Departure at {dep_time_12h}")
             with cols[1]:
                 if st.button("🗑️ Remove", key=f"remove_{i}"):
                     schedule.pop(i)
@@ -92,7 +103,7 @@ def preset_schedule_page():
 
     # === Add New Train ===
     st.subheader("➕ Add New Train")
-    new_time_input = st.text_input("Enter departure time (HH:MM)", key="new_train_time")
+    new_time_input = st.text_input("Enter departure time (HH:MM, 24-hour format)", key="new_train_time")
 
     if new_time_input:
         try:
@@ -101,7 +112,7 @@ def preset_schedule_page():
             time_exists = any(train["departure_time"] == formatted_time for train in schedule)
 
             if time_exists:
-                st.warning(f"A train already departs at {formatted_time}. Please choose a different time.")
+                st.warning(f"A train already departs at {format_24_to_12(formatted_time)}. Please choose a different time.")
             else:
                 if st.button("Add Train"):
                     default_carriages = {
@@ -128,7 +139,7 @@ def preset_schedule_page():
                     }
                     schedule.append(new_train)
                     st.session_state.schedule = schedule
-                    st.success(f"Added train at {formatted_time}")
+                    st.success(f"Added train at {format_24_to_12(formatted_time)}")
                     st.rerun()
 
         except ValueError:

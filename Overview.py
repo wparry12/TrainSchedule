@@ -56,13 +56,18 @@ def booking_overview_page():
 
     group_colour_map = create_group_colour_map(schedule)
 
-    # Map of 24h to 12h formatted times for filter UI
+    # Generate a 24h-to-12h mapping and sort by time
     time_map = {t['departure_time']: format_24_to_12(t['departure_time']) for t in schedule}
+    sorted_times_24 = sorted(time_map.keys(), key=lambda x: datetime.strptime(x, "%H:%M"))
+    sorted_times_12 = [time_map[t] for t in sorted_times_24]
+
+    # Invert the mapping for lookup
     inv_time_map = {v: k for k, v in time_map.items()}
 
+    # Multiselect in 12-hour format, mapped back to 24h internally
     selected_12hr = st.multiselect(
-        "Filter by Departure Time:",
-        options=list(time_map.values()),
+        "Filter by Departure Time (12-Hour Format):",
+        options=sorted_times_12,
         default=None
     )
     selected_times = [inv_time_map[t] for t in selected_12hr] if selected_12hr else []

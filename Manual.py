@@ -137,12 +137,15 @@ def manual_group_assignment_page():
         cols = st.columns(len(train['carriages']))
         for i, carriage in enumerate(train['carriages']):
             occupied = carriage.get("occupied", False)
+            capacity = carriage.get("capacity", 6)
             label = f"🚫 C{i+1}" if occupied else f"🟢 C{i+1}"
             if i == 1:
                 label += " ♿"
+
             with cols[i]:
                 if st.button(label, key=f"train{train_idx}_carriage{i}"):
                     st.session_state.feedback = None
                     st.session_state.selected_train_id = train['id']
                     st.session_state.selected_carriage_index = i
                     st.rerun()
+                st.caption(f"Size: {capacity}")
