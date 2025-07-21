@@ -44,7 +44,11 @@ def remove_group_page():
 
     for train_idx, train in enumerate(schedule):
         dep_str = train['departure_time']
-        dep_time = parse_time_local(dep_str).time()
+        dep_dt = parse_time_local(dep_str)
+        dep_time = dep_dt.time()
+
+        # Format time to 12H with AM/PM, remove leading zero on hour
+        dep_str_12h = dep_dt.strftime("%I:%M %p").lstrip("0")
 
         if not show_past and dep_time < now:
             continue  # Skip past trains unless checkbox is ticked
@@ -53,7 +57,7 @@ def remove_group_page():
         is_party = train.get('party_train', False)
 
         status_label = "❌ CANCELLED" if is_cancelled else ("🎉 PARTY TRAIN" if is_party else "")
-        st.subheader(f"⏰ {dep_str} {status_label}")
+        st.subheader(f"⏰ {dep_str_12h} {status_label}")
 
         cols = st.columns(len(train['carriages']))
         for i, carriage in enumerate(train['carriages']):

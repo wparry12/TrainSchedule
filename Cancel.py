@@ -23,9 +23,16 @@ def train_cancel_page():
     schedule.sort(key=lambda x: parse_time_local(x['departure_time']))
 
     for train in schedule:
+        # Convert 24H to 12H with AM/PM, removing leading zero
+        try:
+            dt_24h = parse_time_local(train['departure_time'])
+            time_12h = dt_24h.strftime("%I:%M %p").lstrip("0")
+        except Exception:
+            time_12h = train['departure_time']
+
         current_status = train.get("cancelled", False)
         new_status = st.checkbox(
-            f"Cancel train at {train['departure_time']}", value=current_status, key=train['departure_time']
+            f"Cancel train at {time_12h}", value=current_status, key=train['departure_time']
         )
         train["cancelled"] = new_status
 

@@ -24,11 +24,17 @@ def party_train_page():
 
     for train in schedule:
         current_status = train.get("party_train", False)
+        dep_dt = parse_time_local(train['departure_time'])
+        dep_str_12h = dep_dt.strftime("%I:%M %p").lstrip("0")  # convert to 12h format
+
         new_status = st.checkbox(
-            f"Mark train at {train['departure_time']} as a Party Train", value=current_status
+            f"Mark train at {dep_str_12h} as a Party Train", value=current_status, key=dep_str_12h
         )
         train["party_train"] = new_status
 
     if st.button("Save Changes"):
         save_schedule(schedule)
         st.success("Party train settings updated.")
+
+if __name__ == "__main__":
+    party_train_page()

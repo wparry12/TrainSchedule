@@ -113,14 +113,21 @@ def booking_overview_page():
                 current_time = datetime.strptime(dep, "%H:%M").time()
                 new_time = st.time_input("Edit Time", value=current_time, key=new_time_key, step=timedelta(minutes=5))
 
+                new_time = st.time_input("Edit Time", value=current_time, key=new_time_key, step=timedelta(minutes=5))
                 new_time_24 = new_time.strftime("%H:%M")
+
                 if new_time_24 != dep:
-                    actual_idx = schedule.index(train)
-                    schedule[actual_idx]['departure_time'] = new_time_24
-                    save_schedule(schedule)
-                    st.success(f"Time updated to {format_24_to_12(new_time_24)}")
-                    del st.session_state["edit_idx"]
-                    st.rerun()
+                    if any(t['departure_time'] == new_time_24 and t != train for t in schedule):
+                        st.warning(f"⛔ A train already departs at {format_24_to_12(new_time_24)}.")
+                    else:
+                        if st.button("Confirm Update", key=f"confirm_update_{idx}"):
+                            actual_idx = schedule.index(train)
+                            schedule[actual_idx]['departure_time'] = new_time_24
+                            save_schedule(schedule)
+                            st.success(f"Time updated to {format_24_to_12(new_time_24)}")
+                            del st.session_state["edit_idx"]
+                            st.rerun()
+
 
             carriage_cols = st.columns(8)
             for i, carriage in enumerate(train['carriages']):
@@ -158,11 +165,11 @@ def booking_overview_page():
         new_train_time = st.time_input("Departure Time", key="new_train_time", step=timedelta(minutes=5))
         submitted = st.form_submit_button("Add Train")
 
-        if submitted:
-            new_train_time_24 = new_train_time.strftime("%H:%M")
-            if any(t['departure_time'] == new_train_time_24 for t in schedule):
-                st.warning("A train with this departure time already exists.")
-            else:
+        new_train_time_24 = new_train_time.strftime("%H:%M")
+        if any(t['departure_time'] == new_train_time_24 for t in schedule):
+            st.warning(f"⛔ A train already departs at {format_24_to_12(new_train_time_24)}.")
+        else:
+            if submitted:
                 default_carriages = {
                     "1": 2, "2": 4, "3": 4, "4": 2, "5": 2, "6": 4, "7": 4, "8": 2
                 }
@@ -173,7 +180,7 @@ def booking_overview_page():
                     "school_name": "",
                     "carriages": [
                         {"number": c_num, "capacity": cap, "occupied": False, "group_size": 0,
-                         "toddlers": 0, "wheelchair": False, "group_id": 0}
+                        "toddlers": 0, "wheelchair": False, "group_id": 0}
                         for c_num, cap in default_carriages.items()
                     ]
                 }
@@ -181,6 +188,7 @@ def booking_overview_page():
                 save_schedule(schedule)
                 st.success(f"Train at {format_24_to_12(new_train_time_24)} added.")
                 st.rerun()
+
 
 if __name__ == "__main__":
     if "edit_idx" not in st.session_state:

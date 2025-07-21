@@ -11,7 +11,11 @@ from School import school_train_page
 from Information import information_page
 
 def main():
-    # Sidebar navigation
+    # Initialize counter in session state if not already present
+    if "diggers_sold" not in st.session_state:
+        st.session_state.diggers_sold = 0
+
+    # Sidebar navigation and counter
     with st.sidebar:
         selected_page = option_menu(
             menu_title="Main Menu",
@@ -24,6 +28,19 @@ def main():
             default_index=0,
             orientation="vertical",
         )
+
+        st.markdown("### Diggers Sold:")
+
+        cols = st.columns([1, 1, 1])
+        with cols[0]:
+            if st.button("➖"):
+                if st.session_state.diggers_sold > 0:
+                    st.session_state.diggers_sold -= 1
+        with cols[1]:
+            st.markdown(f"<h3 style='text-align:center;'>{st.session_state.diggers_sold}</h3>", unsafe_allow_html=True)
+        with cols[2]:
+            if st.button("➕"):
+                st.session_state.diggers_sold += 1
 
     # Refresh logic
     if "last_page" not in st.session_state:
@@ -54,6 +71,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#  c2,c6,c7 full and group of 8 then c3/4/5 will be chosen, is this good?
-# swap to sqlite from JSON

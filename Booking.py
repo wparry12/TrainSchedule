@@ -440,8 +440,33 @@ def booking_page():
             return
 
 
-    # --- Step 4: Default assign button ---
-    if st.button("Assign Group") and group_size != 0:
+    # --- Step 4: Default assign button with preview train time ---
+
+    # Try to preview assignment without committing changes
+    preview_success, preview_schedule = assign_group(
+        schedule, adults, toddlers, wheelchair_count, group_size, group_id,
+        confirmed=False  # Only a dry run
+    )
+
+    # Get the preview train time (if any)
+    train_time = None
+    if preview_success:
+        # Find which train has this group ID
+        for train in preview_schedule:
+            for carriage in train["carriages"]:
+                if carriage["group_id"] == group_id:
+                    train_time = train["departure_time"]
+                    break
+            if train_time:
+                break
+
+    # Format button label
+    assign_label = f"Assign Group"
+    if train_time:
+        assign_label += f" (to {train_time})"
+
+    # Show button
+    if st.button(assign_label) and group_size != 0:
         assigned, updated = assign_group(
             schedule, adults, toddlers, wheelchair_count, group_size, group_id,
             confirmed=False
@@ -453,6 +478,7 @@ def booking_page():
         else:
             st.session_state.feedback = {"type": "error", "data": "❌ No space on any upcoming train."}
         st.rerun()
+
 
     st.markdown("---")
     display_feedback()
