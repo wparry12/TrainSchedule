@@ -143,7 +143,7 @@ def booking_overview_page():
                             save_schedule(schedule)
                             st.success(f"Time updated to {format_24_to_12(new_time_24)}")
                             del st.session_state["edit_idx"]
-                            st.experimental_rerun()
+                            st.rerun()
 
             # Display carriages
             carriage_cols = st.columns(8)
@@ -223,7 +223,7 @@ def booking_overview_page():
                 schedule.append(new_train)
                 save_schedule(schedule)
                 st.success(f"Train at {format_24_to_12(new_train_time_24)} added.")
-                st.experimental_rerun()
+                st.rerun()
 
 if __name__ == "__main__":
     if "edit_idx" not in st.session_state:
