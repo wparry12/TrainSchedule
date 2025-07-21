@@ -1,7 +1,6 @@
 import streamlit as st
-import os
 import matplotlib.cm
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from Code.Database import save_schedule, load_schedule
 from zoneinfo import ZoneInfo
 
@@ -15,6 +14,7 @@ def has_departed(dep_time_str):
     return dep_time < now
 
 def format_24_to_12(time_str):
+    # %-I is platform dependent, on Windows use %#I or manual workaround if needed
     return datetime.strptime(time_str, "%H:%M").strftime("%-I:%M %p")
 
 def create_group_colour_map(schedule, cmap_name='tab20'):
@@ -22,29 +22,28 @@ def create_group_colour_map(schedule, cmap_name='tab20'):
         carriage['group_id']
         for train in schedule
         for carriage in train['carriages']
-        if carriage.get('group_size', 0)
+        if carriage.get('group_size', 0) > 0
     })
     cmap = matplotlib.cm.get_cmap(cmap_name, len(group_ids))
+    
+    def rgb_to_hex(rgb):
+        return '#%02x%02x%02x' % rgb
+    
     return {
-        gid: f'rgb({int(cmap(i)[0]*255)}, {int(cmap(i)[1]*255)}, {int(cmap(i)[2]*255)})'
+        gid: rgb_to_hex((
+            int(cmap(i)[0]*255),
+            int(cmap(i)[1]*255),
+            int(cmap(i)[2]*255)
+        ))
         for i, gid in enumerate(group_ids)
     }
-
-# Function to generate times in 5-minute increments
-def generate_time_options(start_time="00:00", end_time="23:55"):
-    start = datetime.strptime(start_time, "%H:%M")
-    end = datetime.strptime(end_time, "%H:%M")
-    times = []
-    while start <= end:
-        times.append(start.strftime("%H:%M"))
-        start += timedelta(minutes=5)
-    return times
 
 def booking_overview_page():
     st.title("📊 Train Booking Overview")
 
     schedule = load_schedule()
     if not schedule:
+        st.info("No schedule data found.")
         return
 
     # Sort schedule by departure time
@@ -52,30 +51,28 @@ def booking_overview_page():
 
     group_colour_map = create_group_colour_map(schedule)
 
-    # Generate time options in 5-minute intervals for the filter menu
-    time_options = generate_time_options()
-
-    # Time filter dropdown (12h format display)
+    # Prepare time filter dropdown (only times that exist in schedule)
     time_map = {t['departure_time']: format_24_to_12(t['departure_time']) for t in schedule}
     inv_time_map = {v: k for k, v in time_map.items()}
+
     selected_12hr = st.multiselect("Filter by Departure Time:", list(time_map.values()), default=None)
-    selected_times = [inv_time_map[t] for t in selected_12hr]
+    selected_times = [inv_time_map[t] for t in selected_12hr] if selected_12hr else []
 
     # Filter checkboxes
     show_cancelled = st.checkbox("Show Cancelled Trains", value=False)
     show_previous = st.checkbox("Show Previous Trains", value=False)
     show_party = st.checkbox("Show Party Trains", value=True)
-    show_Schools = st.checkbox("Show School Trains", value=True)
+    show_schools = st.checkbox("Show School Trains", value=True)
     show_wheelchair = st.checkbox("Show Wheelchair Users", value=True)
     show_toddlers = st.checkbox("Show Toddlers", value=True)
 
-    # Filtered schedule
+    # Filter schedule based on selections
     filtered = [
         t for t in schedule
         if (not selected_times or t['departure_time'] in selected_times)
         and (show_cancelled or not t.get('cancelled', False))
         and (show_party or not t.get('party_train', False))
-        and (show_Schools or not t.get('school_name', False))
+        and (show_schools or not t.get('school_name', False))
         and (show_previous or not has_departed(t['departure_time']))
     ]
 
@@ -88,7 +85,7 @@ def booking_overview_page():
         formatted_dep = format_24_to_12(dep)
         is_cancelled = train.get('cancelled', False)
         is_party = train.get('party_train', False)
-        is_school = train.get('school_name', False)
+        is_school = bool(train.get('school_name'))
 
         tags = []
         if is_cancelled:
@@ -102,17 +99,16 @@ def booking_overview_page():
         with container:
             cols = st.columns([9, 1])
             with cols[0]:
-                st.markdown(f"### 🚆 Train leaves at {formatted_dep} {' - ' + ' '.join(tags) if tags else ''}")
+                st.markdown(f"### 🚆 Train leaves at {formatted_dep}" + (f" - {' '.join(tags)}" if tags else ""))
             with cols[1]:
                 edit_key = f"edit_btn_{idx}"
                 if st.button("Edit", key=edit_key):
                     st.session_state["edit_idx"] = idx
 
+            # Edit departure time UI
             if st.session_state.get("edit_idx") == idx:
                 new_time_key = f"time_input_{idx}"
                 current_time = datetime.strptime(dep, "%H:%M").time()
-                new_time = st.time_input("Edit Time", value=current_time, key=new_time_key, step=timedelta(minutes=5))
-
                 new_time = st.time_input("Edit Time", value=current_time, key=new_time_key, step=timedelta(minutes=5))
                 new_time_24 = new_time.strftime("%H:%M")
 
@@ -126,9 +122,9 @@ def booking_overview_page():
                             save_schedule(schedule)
                             st.success(f"Time updated to {format_24_to_12(new_time_24)}")
                             del st.session_state["edit_idx"]
-                            st.rerun()
+                            st.experimental_rerun()
 
-
+            # Display carriages
             carriage_cols = st.columns(8)
             for i, carriage in enumerate(train['carriages']):
                 size = carriage.get('group_size', 0)
@@ -137,11 +133,11 @@ def booking_overview_page():
                 wheelchair = carriage.get('wheelchair', False)
 
                 if is_cancelled:
-                    colour = '#ff4d4d'
+                    colour = '#ff4d4d'  # red-ish for cancelled
                 elif is_party:
-                    colour = '#add8e6' if i % 2 == 0 else '#ffb6c1'
+                    colour = '#add8e6' if i % 2 == 0 else '#ffb6c1'  # alternating blue/pink for party
                 elif is_school:
-                    colour = "#ddc446"
+                    colour = "#ddc446"  # gold-ish for school
                 else:
                     colour = group_colour_map.get(gid, '#eee') if size else '#eee'
 
@@ -153,7 +149,7 @@ def booking_overview_page():
 
                 with carriage_cols[i]:
                     st.markdown(f"""
-                       <div style='background-color:{colour}; border-radius:10px; padding:10px; text-align:center; min-height:80px;'>
+                        <div style='background-color:{colour}; border-radius:10px; padding:10px; text-align:center; min-height:80px;'>
                             <b>C{i+1}</b><br>{label.replace(chr(10), '<br>')}
                         </div>
                     """, unsafe_allow_html=True)
@@ -179,15 +175,22 @@ def booking_overview_page():
                     "party_train": False,
                     "school_name": "",
                     "carriages": [
-                        {"number": c_num, "capacity": cap, "occupied": False, "group_size": 0,
-                        "toddlers": 0, "wheelchair": False, "group_id": 0}
+                        {
+                            "number": c_num,
+                            "capacity": cap,
+                            "occupied": False,
+                            "group_size": 0,
+                            "toddlers": 0,
+                            "wheelchair": False,
+                            "group_id": 0
+                        }
                         for c_num, cap in default_carriages.items()
                     ]
                 }
                 schedule.append(new_train)
                 save_schedule(schedule)
                 st.success(f"Train at {format_24_to_12(new_train_time_24)} added.")
-                st.rerun()
+                st.experimental_rerun()
 
 
 if __name__ == "__main__":
