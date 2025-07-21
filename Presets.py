@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from Code.Database import list_presets, load_preset, save_preset, delete_preset, save_schedule
 
@@ -101,49 +101,46 @@ def preset_schedule_page():
 
     st.markdown("---")
 
-    # === Add New Train ===
+        # === Add New Train ===
     st.subheader("➕ Add New Train")
-    new_time_input = st.text_input("Enter departure time (HH:MM, 24-hour format)", key="new_train_time")
 
-    if new_time_input:
-        try:
-            parsed_time = parse_time_local(new_time_input)
-            formatted_time = parsed_time.strftime("%H:%M")
+    with st.form("add_train_form"):
+        new_time_input = st.time_input("Select departure time", step=timedelta(minutes=5))
+        submitted = st.form_submit_button("Add Train")
+
+        if submitted:
+            formatted_time = new_time_input.strftime("%H:%M")
             time_exists = any(train["departure_time"] == formatted_time for train in schedule)
 
             if time_exists:
                 st.warning(f"A train already departs at {format_24_to_12(formatted_time)}. Please choose a different time.")
             else:
-                if st.button("Add Train"):
-                    default_carriages = {
-                        "1": 2, "2": 4, "3": 4, "4": 2,
-                        "5": 2, "6": 4, "7": 4, "8": 2,
-                    }
-                    new_train = {
-                        "departure_time": formatted_time,
-                        "cancelled": False,
-                        "party_train": False,
-                        "school_name": "",
-                        "carriages": [
-                            {
-                                "number": c_num,
-                                "capacity": cap,
-                                "occupied": False,
-                                "group_size": 0,
-                                "toddlers": 0,
-                                "wheelchair": False,
-                                "group_id": 0,
-                            }
-                            for c_num, cap in default_carriages.items()
-                        ],
-                    }
-                    schedule.append(new_train)
-                    st.session_state.schedule = schedule
-                    st.success(f"Added train at {format_24_to_12(formatted_time)}")
-                    st.rerun()
-
-        except ValueError:
-            st.error("Invalid time format! Please enter time as HH:MM.")
+                default_carriages = {
+                    "1": 2, "2": 4, "3": 4, "4": 2,
+                    "5": 2, "6": 4, "7": 4, "8": 2,
+                }
+                new_train = {
+                    "departure_time": formatted_time,
+                    "cancelled": False,
+                    "party_train": False,
+                    "school_name": "",
+                    "carriages": [
+                        {
+                            "number": c_num,
+                            "capacity": cap,
+                            "occupied": False,
+                            "group_size": 0,
+                            "toddlers": 0,
+                            "wheelchair": False,
+                            "group_id": 0,
+                        }
+                        for c_num, cap in default_carriages.items()
+                    ],
+                }
+                schedule.append(new_train)
+                st.session_state.schedule = schedule
+                st.success(f"Added train at {format_24_to_12(formatted_time)}")
+                st.rerun()
 
     # Final save of schedule
     st.session_state.schedule = schedule
