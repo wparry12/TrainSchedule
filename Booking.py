@@ -267,7 +267,7 @@ def booking_page():
     schedule = load_schedule()
     st.header("🎟️ Automatic Group Assignment")
 
-    # Inputs
+    # Input
     adults = st.number_input("Number of Adults", min_value=0, key="adults")
     children = st.number_input("Number of Children", min_value=0, key="children")
     toddlers = st.number_input("Number of Lap-sitting Toddlers", min_value=0, max_value=st.session_state.adults, key="toddlers")
